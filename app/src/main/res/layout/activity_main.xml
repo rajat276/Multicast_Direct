@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/activity_main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context="developer.rajatjain.multicast_direct.MainActivity">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:id="@+id/layout1"
+        android:layout_alignParentTop="true">
+        <TextView
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:background="@color/colorPrimaryDark"
+            android:text="Device Info"
+            android:padding="5dp"
+            android:textSize="16dp"
+            android:textColor="@color/white"/>
+
+        <include layout="@layout/header"/>
+
+        <TextView
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:background="@color/colorPrimaryDark"
+            android:text="Available devices"
+            android:padding="5dp"
+            android:textSize="16dp"
+            android:id="@+id/tab2"
+            android:textColor="@color/white"/>
+        <ListView
+            android:layout_width="match_parent"
+            android:layout_height="0dip"
+            android:id="@+id/devicelist"
+            android:scrollbars="vertical"
+            android:layout_weight="1"
+            android:clickable="true"
+            android:visibility="visible"
+            />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="5dp"
+            android:visibility="gone"
+            android:orientation="vertical"
+            android:id="@+id/testingLayout">
+            <Spinner
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/spinner_testcase"
+               />
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Configure"
+                android:id="@+id/bconfig" />
+            <TextView
+                android:id="@+id/debug_Log"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/layout_message"
+                android:text="Debug Logcat" />
+            <ScrollView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+                <TextView
+                    android:id="@+id/tvlog"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scrollbars="vertical"
+                    android:fadeScrollbars="false"
+                    android:background="#FFFFFF" />
+            </ScrollView>
+
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/bottom"
+        android:layout_alignParentBottom="true"
+        >
+        <include layout="@layout/footer"/>
+    </LinearLayout>
+    <RelativeLayout
+        android:id="@+id/sending_layout"
+        android:layout_width="fill_parent"
+        android:layout_height="48dp"
+        android:paddingLeft="16dp"
+        android:layout_above="@+id/bottom"
+        android:background="@color/black_opacity_60"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <ProgressBar
+                android:id="@+id/search_layout_progress_bar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                style="?android:attr/progressBarStyle">
+            </ProgressBar>
+
+            <TextView
+                android:id="@+id/send_layout_text_view"
+                android:layout_width="wrap_content"
+                android:layout_height="fill_parent"
+                android:layout_alignParentLeft="true"
+                android:gravity="center"
+                android:text="Sending...."
+                android:textColor="@color/white"
+                android:textSize="@dimen/abc_text_size_large_material"/>
+
+        </LinearLayout>
+
+    </RelativeLayout>
+</RelativeLayout>

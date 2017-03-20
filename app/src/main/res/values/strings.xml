@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">Multicast_Direct</string>
+    <string name="available">Available</string>
+    <string name="unavailable">Unavailable</string>
+    <string name="invited">Invited</string>
+    <string name="connected">Connected</string>
+    <string name="failed">Failed</string>
+    <string name="unknown">Unknown</string>
+
+    <string-array name="Testcase_array">
+        <item>2 packets per second</item>
+        <item>100 packets per second </item>
+    </string-array>
+</resources>

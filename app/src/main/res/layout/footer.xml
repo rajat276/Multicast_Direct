@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/colorPrimaryDark">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/line1"
+        android:orientation="horizontal"
+        android:weightSum="2">
+        <Button
+            android:id="@+id/discover"
+            android:layout_weight="1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@color/colorPrimaryDark"
+            android:text="Discover"
+            android:textColor="@color/white"/>
+
+        <Button
+            android:id="@+id/create_group"
+            android:layout_weight="1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@color/colorPrimaryDark"
+            android:text="Create group"
+            android:textColor="@color/white"
+             />
+    </LinearLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:weightSum="2"
+        android:layout_below="@+id/line1">
+        <ToggleButton
+            android:id="@+id/togglestate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textOff="Reciever"
+            android:textOn="Sender"
+            android:showText="true"
+            android:background="@color/colorPrimaryDark"
+            android:layout_weight="1"
+            android:textColor="@color/white"
+             />
+
+        <Button
+            android:id="@+id/send"
+            android:layout_weight="1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@color/colorPrimaryDark"
+            android:textColor="@color/white"
+            android:text="Send"
+             />
+    </LinearLayout>
+</RelativeLayout>
