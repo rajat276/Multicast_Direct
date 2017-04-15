@@ -12,6 +12,7 @@ import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.os.Messenger;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutCompat;
@@ -47,6 +48,7 @@ import developer.rajatjain.multicast_direct.Service.SenderService;
 public class MainActivity extends AppCompatActivity implements Communicate,WifiP2pManager.ConnectionInfoListener, AdapterView.OnItemSelectedListener {
 
     public static final String TAG ="MainActivity" ;
+    public static String P2pDeviceName;
     WifiP2pManager mManager;
     WifiP2pManager.Channel mChannel;
     BroadcastReceiver mReceiver;
@@ -61,10 +63,15 @@ public class MainActivity extends AppCompatActivity implements Communicate,WifiP
     ArrayAdapter adapter;
     public List<WifiP2pDevice> peers = new ArrayList<WifiP2pDevice>();
     Button mDiscover, mCreate_group,mSend,mConfig;
+    int task=0;
     ToggleButton toggleButton;
     int isSender=0,isConnected=0,testnumber=0;
     RelativeLayout mSendingLayout;
     Intent mServiceIntent;
+    WifiP2pDevice LastConnectedDevice;
+    int NumberOfConnectedDevice;
+    WifiP2pDeviceList ConnectedDeviceList;
+    int Acks=0;//Todo Remove this var when class packet is implemented properly also make it zero while sending testcase
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -144,10 +151,25 @@ public class MainActivity extends AppCompatActivity implements Communicate,WifiP
         mSend.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-//                Sender ob1 = new Sender(MainActivity.this, MainActivity.this);
-//                    mAlert.setText("Sending");
-//                    ob1.Test(0);
-                StartSendingService(CreateSendingServiceIntent());
+
+                if(Acks==0) {
+                    task = 1;
+                    StartSendingService(CreateSendingServiceIntent(task));
+
+                }
+                // 5 sec delay waiting for Acks
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        if(Acks==1){//todo number of connected device
+                            task=2;
+                            StartSendingService(CreateSendingServiceIntent(task));
+                            StopReceivingService(CreateRecievingServiceIntent());
+                            Acks=0;
+                        }
+                    }
+                }, 5000);
+
 
             }
         });
@@ -228,7 +250,7 @@ public class MainActivity extends AppCompatActivity implements Communicate,WifiP
 
     @Override
     public void connection(String list) {
-
+        //Todo add a list to ConnectedDevicelist for ACKS and all
         Toast.makeText(getBaseContext(),"connected ",Toast.LENGTH_LONG).show();
         isConnected=1;
         mDiscover.setText("disconnect");
@@ -239,6 +261,7 @@ public class MainActivity extends AppCompatActivity implements Communicate,WifiP
     @Override
     public void notifyThisDeviceChanged(Intent intent) {
         WifiP2pDevice wifiP2pDevice = intent.getParcelableExtra(WifiP2pManager.EXTRA_WIFI_P2P_DEVICE);
+        P2pDeviceName=wifiP2pDevice.deviceName;
         mDeviceName.setText(wifiP2pDevice.deviceName);
         status.setText(getDeviceStatus(wifiP2pDevice.status));
         //mNetworkInfo.setText("ip:"+ NetworkUtil.getMyWifiP2pIpAddress());
@@ -246,6 +269,26 @@ public class MainActivity extends AppCompatActivity implements Communicate,WifiP
 
     @Override
     public void getRecievedText(String msg) {
+        //ToDO java.lang.NullPointerException:
+        // Attempt to invoke virtual method 'boolean java.util.ArrayList.contains(java.lang.Object)' on a null object reference
+        if(msg.equals("ack")){
+            Acks++; //Todo ISSUE if same device send multiple acks can be solved when we introduce packet class
+        }
+
+        if(msg.equals("0.0")) {
+            // TODO
+            Logger(TAG,"in test case 0.0");
+            task=3;
+            testnumber=0;
+            StartSendingService(CreateSendingServiceIntent(task));
+        }
+        if(msg.equals("0.1")){
+            // TODO
+            task=3;
+            testnumber=1;
+            StartSendingService(CreateSendingServiceIntent(task));
+        }
+
         Logger(TAG,"recieve2d:"+msg);
     }
 
@@ -253,9 +296,15 @@ public class MainActivity extends AppCompatActivity implements Communicate,WifiP
     public void notifyAboutSenderAction(String msg) {
         if (msg.equals("0")) {
             Logger(TAG,"sending...");
-        }else if (msg.equals("1")){
+        }else if (msg.equals("1")){//sending stops on sent
             Logger(TAG,"sent");
-            StopSendingService(CreateSendingServiceIntent());
+            task=0;
+            StopSendingService(CreateSendingServiceIntent(task));
+        }else if (msg.equals("2")){//sending stops on sent
+            Logger(TAG,"sent");
+            task=0;
+            StopSendingService(CreateSendingServiceIntent(task));
+            StartReceiveService(CreateRecievingServiceIntent());
         }else{
             sendtxt=msg;
             generateTestResultfile(testnumber+"_sender",msg);
@@ -273,6 +322,7 @@ public class MainActivity extends AppCompatActivity implements Communicate,WifiP
             public void onSuccess() {
                 Toast.makeText(getBaseContext(),"connected to "+ device.deviceName,Toast.LENGTH_LONG).show();
                 isConnected=1;
+                LastConnectedDevice=device;
                 onConnected();
                 mDiscover.setText("disconnect");
                 //success logic
@@ -382,12 +432,13 @@ public class MainActivity extends AppCompatActivity implements Communicate,WifiP
         }
     }
 
-    public Intent CreateSendingServiceIntent(){
+    public Intent CreateSendingServiceIntent(int task){
         mServiceIntent = new Intent(MainActivity.this,SenderService.class);
         mServiceIntent.setAction(SenderService.ON_SEND);
         SenderHandler senderHandler=new SenderHandler(this);
         mServiceIntent.putExtra(SenderService.COMMUNICATE,new Messenger(senderHandler));
         mServiceIntent.putExtra(SenderService.TESTCASE,testnumber);
+        mServiceIntent.putExtra(SenderService.TASK,task);
         return  mServiceIntent;
     }
 
@@ -449,7 +500,8 @@ public class MainActivity extends AppCompatActivity implements Communicate,WifiP
     }
     private void killTestcase(){
         StopReceivingService(CreateRecievingServiceIntent());
-        StopSendingService(CreateSendingServiceIntent());
+        task=0;
+        StopSendingService(CreateSendingServiceIntent(task));
         SenderService.shouldContinue=false;
     }
     public void  generateNoteOnSD(Context context, String sFileName, String sBody) {

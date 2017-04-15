@@ -2,6 +2,8 @@ package developer.rajatjain.multicast_direct.Service;
 
 import android.app.IntentService;
 import android.content.Intent;
+import android.net.wifi.p2p.WifiP2pDevice;
+import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Bundle;
 import android.os.Message;
 import android.os.Messenger;
@@ -18,6 +20,7 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 
 import developer.rajatjain.multicast_direct.Handler.ReceiverHandler;
+import developer.rajatjain.multicast_direct.MainActivity;
 import developer.rajatjain.multicast_direct.Utils.NetworkUtil;
 
 /**
@@ -30,11 +33,14 @@ public class SenderService extends IntentService{
     public static final String BROADCAST_ACTION="BROADCAST_ACTION";
     public static final String EXTENDED_DATA_STATUS = "STATUS";
     public static volatile boolean shouldContinue = true;
+    public static volatile boolean shouldStartTest = false;
     public final static String ON_SEND ="ON_SEND";
     public final static String COMMUNICATE="COMMUNICATE";
     public final static String TESTCASE="TESTCASE";
+    public final static String TASK="TASK";
     public static final String STATE_ACTION_STARTED = "0";
     public static final String STATE_ACTION_COMPLETE = "1";
+    public static final String STATE_TEST_COMPLETE = "2";
     String sendtext="";
     public static boolean isRunning = false;
     public SenderService() {
@@ -46,11 +52,21 @@ public class SenderService extends IntentService{
         final String action = intent.getAction();
         if (action.equals(ON_SEND)) {
             isRunning = true;
-            int testcase=getTestcase(intent);
-            if(testcase==0)
-                SendPackets(intent,200, (float) 0.5); //200*0.5 = 100 Seconds
-            else
-                SendPackets(intent,2000, (float) 0.01); //2000*0.01= 20 Seconds but 2000 packets already reached
+            int task=getTask(intent);
+            if(task==1){
+                SendTestcaseConfig(intent, getTestcase(intent));
+            }else if(task==2){
+                int testcase = getTestcase(intent);
+
+                if (testcase == 0)
+                    SendPackets(intent, 200, (float) 0.5); //200*0.5 = 100 Seconds
+                else
+                    SendPackets(intent, 2000, (float) 0.01); //2000*0.01= 20 Seconds but 2000 packets already reached
+
+            }else if(task==3){
+                SendAck(intent);
+            }
+
         }
     }
     private void SendPackets(Intent intent,int packets,float timeInterval) {
@@ -84,13 +100,44 @@ public class SenderService extends IntentService{
                 Thread.sleep((long) (timeInterval*1000));
             }
             sendDataToMulticastMessageSenderHandler(getHandlerMessenger(intent),sendtext);
-            sendDataToMulticastMessageSenderHandler(getHandlerMessenger(intent), STATE_ACTION_COMPLETE);
+            sendDataToMulticastMessageSenderHandler(getHandlerMessenger(intent), STATE_TEST_COMPLETE);
 
-
+            shouldStartTest=false;
         }catch (IOException |RemoteException ioException) {
             Log.e(TAG, ioException.toString());
         } catch (InterruptedException e) {
             e.printStackTrace();
+        }
+    }
+    public void SendTestcaseConfig(Intent intent,int testcase) {
+        try {
+            sendDataToMulticastMessageSenderHandler(getHandlerMessenger(intent), STATE_ACTION_STARTED);
+            MulticastSocket multicastSocket = createMulticastSocket();
+            String msg = "0." + testcase;
+            DatagramPacket datagramPacket = new DatagramPacket(msg.getBytes(), msg.length(), getMulticastGroupAddress(), getPort());
+            multicastSocket.send(datagramPacket);
+            sendDataToMulticastMessageSenderHandler(getHandlerMessenger(intent), sendtext);
+            sendDataToMulticastMessageSenderHandler(getHandlerMessenger(intent), STATE_ACTION_COMPLETE);
+
+
+        } catch (IOException | RemoteException ioException) {
+            Log.e(TAG, ioException.toString());
+        }
+    }
+    public void SendAck(Intent intent) {
+        try {
+            sendDataToMulticastMessageSenderHandler(getHandlerMessenger(intent), STATE_ACTION_STARTED);
+            MulticastSocket multicastSocket = createMulticastSocket();
+            //String msg = MainActivity.P2pDeviceName;
+            String msg = "ack";
+            DatagramPacket datagramPacket = new DatagramPacket(msg.getBytes(), msg.length(), getMulticastGroupAddress(), getPort());
+            multicastSocket.send(datagramPacket);
+            sendDataToMulticastMessageSenderHandler(getHandlerMessenger(intent), sendtext);
+            sendDataToMulticastMessageSenderHandler(getHandlerMessenger(intent), STATE_ACTION_COMPLETE);
+
+
+        } catch (IOException | RemoteException ioException) {
+            Log.e(TAG, ioException.toString());
         }
     }
 
@@ -129,6 +176,9 @@ public class SenderService extends IntentService{
     }
     private int getTestcase(Intent intent){
         return (int) intent.getExtras().get(TESTCASE);
+    }
+    private int getTask(Intent intent){
+        return (int) intent.getExtras().get(TASK);
     }
     private String getStatusText(String status) {
         return status;
