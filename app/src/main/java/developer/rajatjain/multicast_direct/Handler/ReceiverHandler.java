@@ -34,3 +34,4 @@ public class ReceiverHandler extends Handler {
         return messageFromReceiverService.getData().getString(RECEIVED_TEXT);
     }
 }
+

@@ -87,11 +87,20 @@ public class SenderService extends IntentService{
                 long unixTime = System.currentTimeMillis();
                 count += 1;
                 msg = unixTime + "," + count;
-                if (count == packets)
+                if (count == packets){
                     msg = "STOP";
+                    DatagramPacket datagramPacket = new DatagramPacket(msg.getBytes(), msg.length(), getMulticastGroupAddress(), getPort());
+                    multicastSocket.send(datagramPacket);
+                    multicastSocket.send(datagramPacket);
+                    multicastSocket.send(datagramPacket);
+                    multicastSocket.send(datagramPacket);
+                    multicastSocket.send(datagramPacket);
+                    multicastSocket.send(datagramPacket);
+                }
+
                 DatagramPacket datagramPacket = new DatagramPacket(msg.getBytes(), msg.length(), getMulticastGroupAddress(), getPort());
                 multicastSocket.send(datagramPacket);
-                sendtext=sendtext+","+msg;
+                sendtext=sendtext+"."+msg;
                 final String finalMsg = msg;
                 Log.d("SenderService","Sending" + msg);
                 if (count == packets) {

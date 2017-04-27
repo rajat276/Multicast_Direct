@@ -46,8 +46,18 @@ public class ReceivingService extends IntentService {
                 while (isRunning) {
                     DatagramPacket datagramPacket = createDatagramPacket();
                     multicastSocket.receive(datagramPacket);
-                    Log.e("recieved",datagramPacket.toString());
-                    sendReceivedDataToMulticastMessageReceivedHandler(getHandlerMessenger(intent), datagramPacket);
+                    //Log.e("recieved",datagramPacket.toString());
+                    String received = new String(datagramPacket.getData(), 0, datagramPacket.getLength());
+                    long unixTime = System.currentTimeMillis();
+                    if (received.equals("0.0")) {
+
+                    } else if (received.equals("0.1")) {
+
+                    }else {
+                        received+="," + unixTime;
+                    }
+
+                    sendReceivedDataToMulticastMessageReceivedHandler(getHandlerMessenger(intent), received);
                 }
             } catch (IOException e) {
                 Log.e(MainActivity.TAG, e.toString());
@@ -92,8 +102,8 @@ public class ReceivingService extends IntentService {
             }
         });
     }*/
-    private void sendReceivedDataToMulticastMessageReceivedHandler(Messenger handlerMessenger, DatagramPacket datagramPacket) throws RemoteException {
-        Message handlerMessage = createHandlerMessage(getReceivedText(datagramPacket));
+    private void sendReceivedDataToMulticastMessageReceivedHandler(Messenger handlerMessenger, String datagramPacket) throws RemoteException {
+        Message handlerMessage = createHandlerMessage(datagramPacket);
         handlerMessenger.send(handlerMessage);
     }
 
@@ -107,8 +117,5 @@ public class ReceivingService extends IntentService {
 
     private Messenger getHandlerMessenger(Intent intent) {
         return (Messenger) intent.getExtras().get(COMMUNICATE);
-    }
-    private String getReceivedText(DatagramPacket datagramPacket) {
-        return new String(datagramPacket.getData(), 0, datagramPacket.getLength());
     }
 }

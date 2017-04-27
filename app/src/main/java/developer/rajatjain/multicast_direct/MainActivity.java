@@ -13,6 +13,7 @@ import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Messenger;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutCompat;
@@ -71,6 +72,7 @@ public class MainActivity extends AppCompatActivity implements Communicate,WifiP
     WifiP2pDevice LastConnectedDevice;
     int NumberOfConnectedDevice;
     WifiP2pDeviceList ConnectedDeviceList;
+    String MsgRecieved="";
     int Acks=0;//Todo Remove this var when class packet is implemented properly also make it zero while sending testcase
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -158,21 +160,27 @@ public class MainActivity extends AppCompatActivity implements Communicate,WifiP
 
                 }
                 // 5 sec delay waiting for Acks
-                new Handler().postDelayed(new Runnable() {
+               new Handler().postDelayed(new Runnable() {
                     @Override
                     public void run() {
-                        if(Acks==1){//todo number of connected device
+
                             task=2;
                             StartSendingService(CreateSendingServiceIntent(task));
-                            StopReceivingService(CreateRecievingServiceIntent());
+                            //StopReceivingService(CreateRecievingServiceIntent());
                             Acks=0;
-                        }
+
                     }
                 }, 5000);
-
+                /*if(Acks>0){//todo number of connected device
+                    task=2;
+                    StartSendingService(CreateSendingServiceIntent(task));
+                    StopReceivingService(CreateRecievingServiceIntent());
+                    Acks=0;
+                }*/
 
             }
         });
+        registerReceiver(mReceiver, mIntentFilter);
     }
 
     /* register the broadcast receiver with the intent values to be matched */
@@ -272,24 +280,37 @@ public class MainActivity extends AppCompatActivity implements Communicate,WifiP
         //ToDO java.lang.NullPointerException:
         // Attempt to invoke virtual method 'boolean java.util.ArrayList.contains(java.lang.Object)' on a null object reference
         if(msg.equals("ack")){
-            Acks++; //Todo ISSUE if same device send multiple acks can be solved when we introduce packet class
-        }
-
-        if(msg.equals("0.0")) {
+            if(isSender==0) {
+                Acks++; //Todo ISSUE if same device send multiple acks can be solved when we introduce packet class
+                Logger(TAG, "ack");
+            }
+        }else if(msg.equals("0.0")) {
             // TODO
-            Logger(TAG,"in test case 0.0");
-            task=3;
-            testnumber=0;
-            StartSendingService(CreateSendingServiceIntent(task));
-        }
-        if(msg.equals("0.1")){
-            // TODO
-            task=3;
-            testnumber=1;
-            StartSendingService(CreateSendingServiceIntent(task));
-        }
+            if(isSender==0){
+                MsgRecieved="";
+                Logger(TAG,"in test case 0.0");
+                task=3;
+                testnumber=0;
+                StartSendingService(CreateSendingServiceIntent(task));
+            }
 
-        Logger(TAG,"recieve2d:"+msg);
+        }
+        else if(msg.equals("0.1")){
+            // TODO
+            if(isSender==0){
+                MsgRecieved="";
+                Logger(TAG,"in test case 0.0");
+                task=3;
+                testnumber=1;
+                StartSendingService(CreateSendingServiceIntent(task));
+        }
+        }else {
+            MsgRecieved+="."+msg;
+            if (msg.contains(   "STOP")){
+                generateTestResultfile(testnumber+"_Reciever",MsgRecieved);
+            }
+            Log.e(TAG,"recieve2d:"+msg);
+        }
     }
 
     @Override
@@ -305,7 +326,11 @@ public class MainActivity extends AppCompatActivity implements Communicate,WifiP
             task=0;
             StopSendingService(CreateSendingServiceIntent(task));
             StartReceiveService(CreateRecievingServiceIntent());
-        }else{
+        }else if(msg.equals("ack")){
+            Logger(TAG,"ack sent");
+        }
+        else{
+            Logger(TAG,"in else of notifySender"+msg);
             sendtxt=msg;
             generateTestResultfile(testnumber+"_sender",msg);
         }
@@ -359,7 +384,9 @@ public class MainActivity extends AppCompatActivity implements Communicate,WifiP
     private String getDeviceStatus(int deviceStatus) {
         switch (deviceStatus) {
             case WifiP2pDevice.AVAILABLE:
+                mDiscover.setText("discover");
                 onDisconnected();
+                isConnected=0;
                 return getString(R.string.available);
             case WifiP2pDevice.INVITED:
                 return getString(R.string.invited);
